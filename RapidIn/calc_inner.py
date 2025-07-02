@@ -113,21 +113,25 @@ def grad_z(z, t, input_len, model, gpu=-1, return_words_loss=False, s_test_vec=N
     if gpu >= 0:
         z, t = z.cuda(gpu), t.cuda(gpu)
 
+    for param in model.parameters():
+        param.requires_grad = True
+
     y = model(z)
     y = y.logits
-    loss = calc_loss(y, t) # batch_size = 1
+    loss = calc_loss(y, t)  # batch_size = 1
 
     params = get_params(model, create_if_not_exist=False)
     if params is not None:
+        loss.backward()
         grad_loss = torch.cat([x.reshape(-1) for x in list(grad(loss, params))])
         model.zero_grad(set_to_none=True)
     else:
         grad_loss = None
         if use_deepspeed == True:
-            model.backward(loss)
-            grad_loss = torch.cat([normalize(model.optimizer.fp32_partitioned_groups_flat[group_idx].grad.narrow(0, dest_offset, num_elements)) \
-                    for group_idx, dest_offset, num_elements in model.optimizer.grad_position.values()])
-            model.optimizer.zero_grad()
+            loss.backward()
+            # 修改此处，直接从模型参数获取梯度
+            grad_loss = torch.cat([normalize(p.grad.reshape(-1)) for p in model.parameters() if p.grad is not None])
+            model.zero_grad()
         else:
             loss.backward()
             grad_loss = torch.cat([normalize(p.grad.reshape(-1)) for p in model.parameters() if p.grad is not None])

@@ -1,0 +1,4 @@
+*.pt
+examples/grads_path/
+examples/grads_path_fulltrain/
+examples/grads_path_thoth7b/

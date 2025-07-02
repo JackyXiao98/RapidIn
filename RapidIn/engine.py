@@ -23,6 +23,7 @@ import gc
 from torch.autograd import grad
 from sys import getsizeof
 # import deepspeed
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 MAX_CAPACITY = 2048
@@ -96,12 +97,27 @@ def MP_run_calc_infulence_function(rank, world_size, process_id, config, mp_engi
             # model.half()
 
             import deepspeed
-            model, _, _, _ = deepspeed.initialize(
+            os.environ['MASTER_ADDR'] = 'localhost'
+            os.environ['MASTER_PORT'] = '12345'
+            os.environ['RANK'] = str(rank)
+            os.environ['WORLD_SIZE'] = str(world_size)
+            os.environ['LOCAL_RANK'] = str(rank % torch.cuda.device_count())  # 设置 LOCAL_RANK
+
+            # 初始化分布式环境
+            torch.distributed.init_process_group(
+                backend='nccl',
+                init_method='env://',
+                rank=rank,
+                world_size=world_size
+            )
+            for param in model.parameters():
+                param.requires_grad = True
+            model, optimizer, _, _ = deepspeed.initialize(
                 model=model,
                 model_parameters=model.parameters(),
                 config=deepspeed_config,
             )
-            model.optimizer.override_loss_scale(1)
+            # model.optimizer.override_loss_scale(1)
         print(f"CUDA {rank}: Model loaded!")
 
         s_test_vec_list = []

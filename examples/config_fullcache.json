@@ -1,0 +1,30 @@
+{
+    "data": {
+        "train_data_path": "./datasets/alpaca_52k_with_5k_howdy_backdoor.jsonl"
+    },
+    "influence": {
+        "outdir": "output_dir_thoth7b/",
+        "seed": 42,
+        "cal_words_infl": false,
+        "save_to_grads_path": true,
+        "n_threads": 1,
+        "RapidGrad": {
+            "enable": true,
+            "RapidGrad_K": 65536,
+            "shuffle_lambda": 20
+        },
+        "deepspeed": {
+            "enable": true,
+            "config_path": "./deepspeed_config_zero2.json"
+        },
+        "offload_train_grad": false,
+        "skip_test": true,
+        "skip_influence": true,
+        "grads_path": "./grads_path_thoth7b/"
+    },
+    "model": {
+        "model_path": "/mnt/bn/pilab0/cache/huggingface/hub/thoth-7b-v4",
+        "max_length": 512,
+        "load_in_4bit": true
+    }
+}
